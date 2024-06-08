@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  golang-app1:
+    container_name: golang-app1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - golang-gin3-db
+  golang-gin3-db:
+    container_name: golang-gin3-db
+    image: postgres:alpine3.19
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=rahasia
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=golang_gin3
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+volumes:
+  pgdata: {}
+    

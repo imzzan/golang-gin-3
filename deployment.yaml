@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  golang-app-gin3
+  namespace: default
+  labels:
+    app:  golang-app-gin3
+spec:
+  selector:
+    matchLabels:
+      app: golang-app-gin3
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  golang-app-gin3
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name:  golang-app-gin3
+        image:  zani23/golang-app-gin3:v1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 3000
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 5
+        env:
+        - name: PORT
+          value: "3000"
+        - name: DB_URL
+          value: "host=golang-gin3-db user=postgres password=rahasia dbname=golang_gin3 port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+        - name: TOKEN
+          value: "rahasia"
+        ports:
+        - containerPort:  3000
+          name:  golang-app-gin3
+        volumeMounts:
+        - name: localtime
+          mountPath: /etc/localtime
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+      restartPolicy: Always
+  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: golang-app-gin3
+  namespace: default
+spec:
+  selector:
+    app: golang-app-gin3
+  type: ClusterIP
+  sessionAffinity: None
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+  - name: golang-app-gin3
+    protocol: TCP
+    port: 3000
+    targetPort: 3000
+    # If you set the `spec.type` field to `NodePort` and you want a specific port number,
+    # you can specify a value in the `spec.ports[*].nodePort` field.
